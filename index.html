@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Heart for My Love ❤️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        body {
+            background-color: #0b0b0b;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* UI Control Panel */
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 16px 24px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 90%;
+            max-width: 450px;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .control-panel.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -20px);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            color: #aaa;
+            font-weight: 300;
+        }
+
+        .input-group input, .input-group select {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 14px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: #ff3366;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff3366, #ff6b8b);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Floating buttons */
+        .floating-controls {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+        }
+
+        .float-btn {
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: background 0.2s;
+        }
+
+        .float-btn:hover {
+            background: rgba(40, 40, 40, 0.9);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #ff3366;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 5px 20px rgba(255,51,102,0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Hint for hidden UI */
+        .screen-hint {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #aaa;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 5;
+        }
+        body.ui-hidden .screen-hint {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="screen-hint">แตะหน้าจอ 1 ครั้งเพื่อเปิดเมนู</div>
+
+    <div class="control-panel" id="controlPanel">
+        <div class="input-group">
+            <label for="nameInput">ชื่อคนที่คุณรัก ❤️</label>
+            <input type="text" id="nameInput" value="ที่รัก" placeholder="พิมพ์ชื่อแฟนของคุณ...">
+        </div>
+
+        <div class="input-group">
+            <label for="modeSelect">รูปแบบข้อความ</label>
+            <select id="modeSelect">
+                <option value="name">แสดงชื่อที่เลือกอย่างเดียว</option>
+                <option value="all">ผสมคำบอกรัก 14 ภาษาทั่วโลก (เหมือนในคลิป)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="colorSelect">โทนสีนีออน</label>
+            <select id="colorSelect">
+                <option value="pink">ชมพูโรแมนติก (Classic Pink)</option>
+                <option value="purple">ม่วงพาสเทล (Purple Glow)</option>
+                <option value="cyan">ฟ้าไซอัน (Neon Cyan)</option>
+                <option value="rainbow">สายรุ้งวิบวับ (Rainbow Party)</option>
+            </select>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-primary" id="shareBtn">💌 ส่งลิงก์ให้แฟน</button>
+            <button class="btn-secondary" id="hideBtn">ซ่อนเมนู</button>
+        </div>
+    </div>
+
+    <div class="floating-controls" id="floatingControls">
+        <button class="float-btn" id="replayBtn">🔄 เล่นใหม่</button>
+        <button class="float-btn" id="showPanelBtn" style="display:none;">⚙️ เมนู</button>
+    </div>
+
+    <div class="toast" id="toast">คัดลอกลิงก์สำเร็จ! ส่งให้แฟนได้เลย 💖</div>
+
+    <canvas id="heartCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('heartCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const nameInput = document.getElementById('nameInput');
+        const modeSelect = document.getElementById('modeSelect');
+        const colorSelect = document.getElementById('colorSelect');
+        const controlPanel = document.getElementById('controlPanel');
+        const floatingControls = document.getElementById('floatingControls');
+        const hideBtn = document.getElementById('hideBtn');
+        const showPanelBtn = document.getElementById('showPanelBtn');
+        const replayBtn = document.getElementById('replayBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const toast = document.getElementById('toast');
+
+        // Phrases list from the python code snippet
+        const phrases = [
+            "I love you", "Seni seviyorum", "Te amo", "Ti amo", "Je t'aime",
+            "Я тебя люблю", "Ich liebe dich", "Aku cinta kamu", "Kocham cię",
+            "Jag älskar dig", "ฉันรักคุณ", "사랑해", "我爱你", "Anh yêu em"
+        ];
+
+        let width, height;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Check URL parameters for shared mode
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('to')) {
+            nameInput.value = decodeURIComponent(urlParams.get('to'));
+        }
+        if (urlParams.has('mode')) {
+            modeSelect.value = urlParams.get('mode');
+        }
+        if (urlParams.has('color')) {
+            colorSelect.value = urlParams.get('color');
+        }
+        if (urlParams.has('shared')) {
+            // Auto hide UI for recipient
+            controlPanel.classList.add('hidden');
+            showPanelBtn.style.display = 'block';
+        }
+
+        // Heart mathematical formula coordinates generator
+        function getHeartPoint(t, scale) {
+            const x = 16 * Math.pow(Math.sin(t), 3);
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            return {
+                x: width / 2 + x * scale,
+                y: height / 2 + y * scale
+            };
+        }
+
+        // Particles for explosion / floating effects
+        let particles = [];
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3 + 1;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+                this.size = Math.random() * 3 + 1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= this.decay;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        let currentT = 0;
+        const maxT = Math.PI * 2;
+        const speed = 0.03;
+        let points = [];
+        let textTimer = 0;
+        let currentPhraseIndex = 0;
+
+        function resetAnimation() {
+            currentT = 0;
+            points = [];
+            particles = [];
+        }
+
+        replayBtn.addEventListener('click', resetAnimation);
+
+        hideBtn.addEventListener('click', () => {
+            controlPanel.classList.add('hidden');
+            showPanelBtn.style.display = 'block';
+            document.body.classList.add('ui-hidden');
+        });
+
+        showPanelBtn.addEventListener('click', () => {
+            controlPanel.classList.remove('hidden');
+            showPanelBtn.style.display = 'none';
+            document.body.classList.remove('ui-hidden');
+        });
+
+        // Click screen to toggle UI when hidden
+        window.addEventListener('click', (e) => {
+            if (e.target.tagName === 'CANVAS' && controlPanel.classList.contains('hidden')) {
+                controlPanel.classList.remove('hidden');
+                showPanelBtn.style.display = 'none';
+                document.body.classList.remove('ui-hidden');
+            }
+        });
+
+        // Click screen to spawn mini hearts
+        window.addEventListener('click', (e) => {
+            if (e.target.tagName === 'CANVAS') {
+                const colorTheme = colorSelect.value;
+                let c = '#ff3366';
+                if (colorTheme === 'purple') c = '#b19cd9';
+                if (colorTheme === 'cyan') c = '#00f3ff';
+                if (colorTheme === 'rainbow') c = `hsl(${Math.random() * 360}, 100%, 70%)`;
+
+                for (let i = 0; i < 20; i++) {
+                    particles.push(new Particle(e.clientX, e.clientY, c));
+                }
+            }
+        });
+
+        // Share link function
+        shareBtn.addEventListener('click', () => {
+            const name = encodeURIComponent(nameInput.value);
+            const mode = modeSelect.value;
+            const color = colorSelect.value;
+            const shareUrl = `${window.location.origin}${window.location.pathname}?to=${name}&mode=${mode}&color=${color}&shared=1`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'เซอร์ไพรส์จากคนพิเศษ ❤️',
+                    text: `กดดูหัวใจดวงนี้สิคะ ${nameInput.value} 💖`,
+                    url: shareUrl,
+                }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 2500);
+                });
+            }
+        });
+
+        // Main Animation Loop
+        function animate() {
+            ctx.fillStyle = 'rgba(11, 11, 11, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+
+            const scale = Math.min(width, height) / 38;
+            const colorTheme = colorSelect.value;
+
+            // Determine Glow & Line Color
+            let glowColor = '#ff3366';
+            let coreColor = '#ff8fa3';
+            if (colorTheme === 'purple') {
+                glowColor = '#9d4edd';
+                coreColor = '#e0aaff';
+            } else if (colorTheme === 'cyan') {
+                glowColor = '#00b4d8';
+                coreColor = '#90e0ef';
+            } else if (colorTheme === 'rainbow') {
+                glowColor = `hsl(${(Date.now() / 20) % 360}, 100%, 65%)`;
+                coreColor = '#ffffff';
+            }
+
+            // Draw drawing heart path step by step
+            if (currentT <= maxT) {
+                currentT += speed;
+                const pt = getHeartPoint(currentT, scale);
+                points.push(pt);
+                if (Math.random() < 0.4) {
+                    particles.push(new Particle(pt.x, pt.y, glowColor));
+                }
+            } else {
+                // Loop loop or subtle pulsing once completed
+                if (Math.random() < 0.15) {
+                    const randomPt = points[Math.floor(Math.random() * points.length)];
+                    if (randomPt) particles.push(new Particle(randomPt.x, randomPt.y, glowColor));
+                }
+            }
+
+            // Render Heart Outline
+            if (points.length > 1) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = glowColor;
+                ctx.strokeStyle = coreColor;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Render Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Render Center Text
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const mode = modeSelect.value;
+            let displayText = '';
+
+            if (mode === 'name') {
+                displayText = nameInput.value || 'ที่รัก';
+                ctx.font = 'bold 36px "Prompt", sans-serif';
+            } else {
+                // Cycle phrases like python list
+                textTimer++;
+                if (textTimer > 120) {
+                    currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
+                    textTimer = 0;
+                }
+                displayText = `${phrases[currentPhraseIndex]} ❤️ ${nameInput.value || 'ที่รัก'}`;
+                ctx.font = 'bold 24px "Prompt", sans-serif';
+            }
+
+            // Text Neon Glow Effect
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = glowColor;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(displayText, width / 2, height / 2);
+            ctx.restore();
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
